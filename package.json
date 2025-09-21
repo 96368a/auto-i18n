@@ -1,0 +1,39 @@
+{
+  "name": "vite-template-solid",
+  "type": "module",
+  "version": "0.0.1",
+  "description": "",
+  "license": "MIT",
+  "scripts": {
+    "start": "vite",
+    "dev": "vite",
+    "build": "vite build",
+    "serve": "vite preview",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix"
+  },
+  "dependencies": {
+    "@ameinhardt/unocss-preset-daisy": "^1.1.8",
+    "@solid-primitives/media": "^2.3.3",
+    "@solid-primitives/storage": "^4.3.3",
+    "@solidjs/router": "^0.15.3",
+    "daisyui": "^5.1.13",
+    "solid-js": "^1.9.9",
+    "yaml": "^2.8.1"
+  },
+  "devDependencies": {
+    "@antfu/eslint-config": "^5.4.0",
+    "@iconify-json/carbon": "^1.2.13",
+    "@types/node": "^24.5.2",
+    "@unocss/eslint-plugin": "^66.5.1",
+    "@unocss/reset": "66.5.0",
+    "eslint": "^9.36.0",
+    "eslint-plugin-solid": "^0.14.5",
+    "typescript": "^5.9.2",
+    "unocss": "^66.5.1",
+    "unplugin-auto-import": "^20.1.0",
+    "vite": "^7.1.6",
+    "vite-plugin-pages": "^0.33.1",
+    "vite-plugin-solid": "^2.11.8"
+  }
+}
