@@ -203,12 +203,29 @@ const UpdateTranslatePage: Component = () => {
     ))
   }
 
+  const resetStringValue = (index: number) => {
+    setStringValues(prev => prev.map((item, i) => {
+      if (i === index) {
+        const resetValue = item.translatedValue || item.originalValue
+        return { ...item, edited: undefined, currentValue: resetValue }
+      }
+      return item
+    }))
+  }
+
   // 全选/反选功能
   const toggleSelectAll = () => {
     const allSelected = stringValues().every(item => item.selected)
     setStringValues(prev => prev.map(item => ({
       ...item,
       selected: !allSelected,
+    })))
+  }
+
+  const selectUntranslated = () => {
+    setStringValues(prev => prev.map(item => ({
+      ...item,
+      selected: (!item.edited || item.edited.trim() === '') && (!item.translatedValue || item.translatedValue.trim() === ''),
     })))
   }
 
@@ -409,19 +426,52 @@ const UpdateTranslatePage: Component = () => {
             {/* Middle Panel - Translation Editing */}
             <div class="bg-base-100 card shadow-xl">
               <div class="card-body">
-                <div class="mb-4 flex items-center justify-between">
-                  <h2 class="card-title">翻译编辑</h2>
-                  <div class="flex gap-2">
+                <div class="mb-4">
+                  <div class="flex items-center gap-2 mb-3 flex-wrap">
+                    <h2 class="card-title">翻译编辑</h2>
+                    <span class="badge badge-neutral whitespace-nowrap">
+                      总计 {stringValues().length}
+                    </span>
+                    <span class="badge badge-success whitespace-nowrap">
+                      已翻译 {stringValues().filter(s => {
+                        const hasEdited = s.edited && s.edited.trim() !== ''
+                        const hasTranslated = s.translatedValue && s.translatedValue.trim() !== ''
+                        return hasEdited || (!hasEdited && hasTranslated)
+                      }).length}
+                    </span>
+                    <span class="badge badge-warning whitespace-nowrap">
+                      未翻译 {stringValues().filter(s => {
+                        const hasEdited = s.edited && s.edited.trim() !== ''
+                        const hasTranslated = s.translatedValue && s.translatedValue.trim() !== ''
+                        return !hasEdited && !hasTranslated
+                      }).length}
+                    </span>
+                    <span class="badge badge-info whitespace-nowrap">
+                      新增 {stringValues().filter(s => s.isNew).length}
+                    </span>
+                    <span class="badge badge-info whitespace-nowrap">
+                      更新 {stringValues().filter(s => s.isUpdated).length}
+                    </span>
+                  </div>
+                  <div class="flex flex-wrap gap-2">
                     <button
                       class="btn btn-outline btn-sm"
                       disabled={!isValidInput() || stringValues().length === 0}
                       onClick={toggleSelectAll}
                     >
                       <i class="i-carbon:checkbox-checked" />
-                      {stringValues().every(item => item.selected) ? '反选' : '全选'}
+                      <span class="hidden sm:inline">{stringValues().every(item => item.selected) ? '反选' : '全选'}</span>
                     </button>
                     <button
-                      class="btn btn-secondary btn-sm"
+                      class="btn btn-outline btn-sm"
+                      disabled={!isValidInput() || stringValues().length === 0}
+                      onClick={selectUntranslated}
+                    >
+                      <i class="i-carbon:select-01" />
+                      <span class="hidden sm:inline">选择未翻译</span>
+                    </button>
+                    <button
+                      class="btn btn-secondary btn-sm min-w-20"
                       disabled={!isValidInput() || stringValues().filter(item => item.selected).length === 0 || isTranslating()}
                       onClick={handleAITranslation}
                     >
@@ -429,13 +479,13 @@ const UpdateTranslatePage: Component = () => {
                         ? (
                             <>
                               <span class="loading loading-spinner loading-xs" />
-                              翻译中...
+                              <span class="hidden sm:inline">翻译中</span>
                             </>
                           )
                         : (
                             <>
                               <i class="i-carbon:ai-launch" />
-                              AI翻译
+                              <span class="hidden sm:inline">AI翻译</span>
                             </>
                           )}
                     </button>
@@ -445,7 +495,7 @@ const UpdateTranslatePage: Component = () => {
                       onClick={downloadFile}
                     >
                       <i class="i-carbon:download" />
-                      下载
+                      <span class="hidden sm:inline">下载</span>
                     </button>
                   </div>
                 </div>
@@ -460,7 +510,7 @@ const UpdateTranslatePage: Component = () => {
                 ) : (
                   <div class="space-y-4">
                     {/* String Values for Editing */}
-                    <div class="max-h-96 overflow-y-auto space-y-3">
+                    <div class="max-h-[600px] overflow-y-auto space-y-3">
                       <Index each={stringValues()}>
                         {(stringVal, index) => (
                           <div class={`border rounded-lg p-4 ${stringVal().isNew
@@ -500,39 +550,29 @@ const UpdateTranslatePage: Component = () => {
                                       {stringVal().translatedValue}
                                     </div>
                                   )}
-                                  <input
-                                    type="text"
-                                    class="input-bordered input input-sm w-full"
-                                    placeholder="编辑翻译..."
-                                    value={stringVal().edited || stringVal().currentValue}
-                                    onInput={e => updateStringValue(index, e.currentTarget.value)}
-                                  />
+                                  <div class="flex gap-2">
+                                    <input
+                                      type="text"
+                                      class="input-bordered input input-sm flex-1"
+                                      placeholder="编辑翻译..."
+                                      value={stringVal().edited || stringVal().currentValue}
+                                      onInput={e => updateStringValue(index, e.currentTarget.value)}
+                                    />
+                                    <button
+                                      class="btn btn-ghost btn-sm"
+                                      disabled={!stringVal().edited}
+                                      onClick={() => resetStringValue(index)}
+                                      title="重置为原文"
+                                    >
+                                      <i class="i-carbon:reset" />
+                                    </button>
+                                  </div>
                                 </div>
                               </div>
                             </div>
                           </div>
                         )}
                       </Index>
-                    </div>
-
-                    {/* Statistics */}
-                    <div class="stats stats-horizontal w-full shadow">
-                      <div class="stat">
-                        <div class="stat-title">总计</div>
-                        <div class="stat-value text-lg">{stringValues().length}</div>
-                      </div>
-                      <div class="stat">
-                        <div class="stat-title">新增</div>
-                        <div class="text-warning stat-value text-lg">
-                          {stringValues().filter(s => s.isNew).length}
-                        </div>
-                      </div>
-                      <div class="stat">
-                        <div class="stat-title">更新</div>
-                        <div class="text-info stat-value text-lg">
-                          {stringValues().filter(s => s.isUpdated).length}
-                        </div>
-                      </div>
                     </div>
                   </div>
                 )}
