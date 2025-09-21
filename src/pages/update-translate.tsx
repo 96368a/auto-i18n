@@ -29,7 +29,7 @@ const UpdateTranslatePage: Component = () => {
   const [stringValues, setStringValues] = createSignal<StringValue[]>([])
 
   const { aiConfig } = useAIConfig
-  const { isTranslating, translateWithAI } = useAITranslator()
+  const { isTranslating, translateWithAI, cancelTranslation } = useAITranslator()
 
   const isValidInput = createMemo(() => {
     return baseContent().trim() !== '' && !baseError() && baseData() !== null
@@ -489,6 +489,15 @@ const UpdateTranslatePage: Component = () => {
                             </>
                           )}
                     </button>
+                    {isTranslating() && (
+                      <button
+                        class="btn btn-error btn-sm"
+                        onClick={cancelTranslation}
+                      >
+                        <i class="i-carbon:stop" />
+                        <span class="hidden sm:inline">取消</span>
+                      </button>
+                    )}
                     <button
                       class="btn btn-primary btn-sm"
                       disabled={!isValidInput() || stringValues().length === 0}

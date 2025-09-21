@@ -4,7 +4,7 @@ import { useAIConfig } from '~/stores/aiConfig'
 const AIConfig: Component = () => {
   const { aiConfig, setAiConfig } = useAIConfig
 
-  const updateConfig = (updates: Record<string, string>) => {
+  const updateConfig = (updates: Record<string, string | number>) => {
     setAiConfig(prev => ({ ...prev, ...updates }))
   }
 
@@ -15,7 +15,7 @@ const AIConfig: Component = () => {
           <i class="i-carbon:ai-launch" />
           AI模型配置
         </h2>
-        <div class="grid grid-cols-1 gap-4 lg:grid-cols-4 md:grid-cols-2">
+        <div class="grid grid-cols-1 gap-4 lg:grid-cols-5 md:grid-cols-2">
           <div class="form-control">
             <label class="label">
               <span class="label-text">API端点</span>
@@ -50,6 +50,20 @@ const AIConfig: Component = () => {
               placeholder="gpt-3.5-turbo"
               value={aiConfig().model}
               onInput={e => updateConfig({ model: e.currentTarget.value })}
+            />
+          </div>
+          <div class="form-control">
+            <label class="label">
+              <span class="label-text">并发数</span>
+            </label>
+            <input
+              type="number"
+              class="input-bordered input input-sm"
+              placeholder="3"
+              min="1"
+              max="10"
+              value={aiConfig().concurrency}
+              onInput={e => updateConfig({ concurrency: Math.max(1, Math.min(100, Number(e.currentTarget.value) || 3)) })}
             />
           </div>
           <div class="form-control">

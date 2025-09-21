@@ -17,6 +17,7 @@ interface AITranslatorProps {
 
 export function useAITranslator() {
   const [isTranslating, setIsTranslating] = createSignal(false)
+  let abortController: AbortController | null = null
 
   const translateWithAI = async (
     config: AIConfigState,
@@ -35,55 +36,94 @@ export function useAITranslator() {
     }
 
     setIsTranslating(true)
+    abortController = new AbortController()
 
     try {
-      for (const item of selectedItems) {
-        const response = await fetch(config.endpoint, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${config.apiKey}`,
-          },
-          body: JSON.stringify({
-            model: config.model,
-            messages: [
-              {
-                role: 'system',
-                content: config.promptTemplate,
+      const concurrency = Math.max(1, Math.min(config.concurrency || 3, 10)) // 限制并发数在 1-10 之间
+
+      // 将选中的项目分批处理
+      for (let i = 0; i < selectedItems.length; i += concurrency) {
+        if (abortController.signal.aborted) {
+          break
+        }
+
+        const batch = selectedItems.slice(i, i + concurrency)
+
+        // 并发执行当前批次的翻译请求
+        const promises = batch.map(async (item) => {
+          if (!abortController || abortController.signal.aborted) {
+            return
+          }
+
+          try {
+            const response = await fetch(config.endpoint, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${config.apiKey}`,
               },
-              {
-                role: 'user',
-                content: item.value,
-              },
-            ],
-            max_tokens: 1000,
-            temperature: 0.3,
-          }),
+              body: JSON.stringify({
+                model: config.model,
+                messages: [
+                  {
+                    role: 'system',
+                    content: config.promptTemplate,
+                  },
+                  {
+                    role: 'user',
+                    content: item.value,
+                  },
+                ],
+                max_tokens: 1000,
+                temperature: 0.3,
+              }),
+              signal: abortController.signal,
+            })
+
+            if (response.ok) {
+              const data = await response.json()
+              const translation = data.choices?.[0]?.message?.content?.trim() || item.value
+
+              const index = items.findIndex(it => it.path === item.path)
+              if (index !== -1) {
+                onTranslationComplete(index, translation)
+              }
+            }
+          } catch (error) {
+            if (error instanceof Error && error.name !== 'AbortError') {
+              console.error(`翻译失败 ${item.path}:`, error)
+            }
+          }
         })
 
-        if (response.ok) {
-          const data = await response.json()
-          const translation = data.choices?.[0]?.message?.content?.trim() || item.value
-
-          const index = items.findIndex(it => it.path === item.path)
-          if (index !== -1) {
-            onTranslationComplete(index, translation)
-          }
-        }
+        // 等待当前批次完成
+        await Promise.all(promises)
       }
     }
     catch (error) {
-      console.error('AI翻译失败:', error)
-      alert('AI翻译失败，请检查配置和网络连接')
+      if (error instanceof Error && error.name === 'AbortError') {
+        console.log('AI翻译已取消')
+      } else {
+        console.error('AI翻译失败:', error)
+        alert('AI翻译失败，请检查配置和网络连接')
+      }
     }
     finally {
       setIsTranslating(false)
+      abortController = null
+    }
+  }
+
+  const cancelTranslation = () => {
+    if (abortController) {
+      abortController.abort()
     }
   }
 
   return {
     isTranslating,
     translateWithAI,
+    cancelTranslation,
   }
 }
 
