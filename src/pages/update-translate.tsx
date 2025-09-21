@@ -146,6 +146,16 @@ const UpdateTranslatePage: Component = () => {
     if (!file)
       return
 
+    // 智能判断文件类型
+    const fileName = file.name.toLowerCase()
+    const fileExtension = fileName.split('.').pop()
+
+    if (fileExtension === 'json') {
+      setInputType('json')
+    } else if (fileExtension === 'yaml' || fileExtension === 'yml') {
+      setInputType('yaml')
+    }
+
     const reader = new FileReader()
     reader.onload = (e) => {
       const content = e.target?.result as string
@@ -159,6 +169,18 @@ const UpdateTranslatePage: Component = () => {
     const file = (event.target as HTMLInputElement).files?.[0]
     if (!file)
       return
+
+    // 智能判断文件类型（如果基础文件还没有设置类型）
+    if (!baseContent()) {
+      const fileName = file.name.toLowerCase()
+      const fileExtension = fileName.split('.').pop()
+
+      if (fileExtension === 'json') {
+        setInputType('json')
+      } else if (fileExtension === 'yaml' || fileExtension === 'yml') {
+        setInputType('yaml')
+      }
+    }
 
     const reader = new FileReader()
     reader.onload = (e) => {

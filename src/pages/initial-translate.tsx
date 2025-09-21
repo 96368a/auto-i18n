@@ -85,6 +85,16 @@ const InitialTranslatePage: Component = () => {
     if (!file)
       return
 
+    // 智能判断文件类型
+    const fileName = file.name.toLowerCase()
+    const fileExtension = fileName.split('.').pop()
+
+    if (fileExtension === 'json') {
+      setInputType('json')
+    } else if (fileExtension === 'yaml' || fileExtension === 'yml') {
+      setInputType('yaml')
+    }
+
     const reader = new FileReader()
     reader.onload = (e) => {
       const content = e.target?.result as string
